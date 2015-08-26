@@ -14,3 +14,5 @@ ALTER TABLE testing_table
   ADD first_name VARCHAR(100), 
   ADD last_name VARCHAR(100), 
   MODIFY roll_no INT;
+
+  
