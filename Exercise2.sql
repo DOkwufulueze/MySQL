@@ -74,7 +74,7 @@ FROM (
   INNER JOIN locations
   ON (sandwiches.`location` = locations.lname)
   WHERE name = 'Jones'
-) AS t1;
+) AS modified_table;
 
 -- Places where Jones can eat (without using a nested query)
 SELECT address AS 'Places WITHOUT Using Nested Query'
