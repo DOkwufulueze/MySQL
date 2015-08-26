@@ -1,3 +1,5 @@
+DROP DATABASE IF EXISTS mysql_track;
+
 CREATE DATABASE IF NOT EXISTS mysql_track;
 
 USE mysql_track;
