@@ -9,9 +9,10 @@ CREATE TABLE IF NOT EXISTS testing_table (
 );
 
 ALTER TABLE testing_table 
-  DROP name, 
-  CHANGE contact_name username VARCHAR(200), 
-  ADD first_name VARCHAR(100), 
-  ADD last_name VARCHAR(100), 
-  MODIFY roll_no INT;
+DROP name, 
+CHANGE contact_name username VARCHAR(200), 
+ADD first_name VARCHAR(100), 
+ADD last_name VARCHAR(100), 
+MODIFY roll_no INT;
+
 
