@@ -1,0 +1,119 @@
+1. What do different columns in the output of EXPLAIN mean?
+
+The diferent columns in the output of EXPLAIN give details of the performance situation of a query passed to EXPLAIN. They are 10 in number if EXPLAIN is not extended. They're as follows:
+i.  id: keeps track of the subquery SELECT statements in the query
+ii. select_type: describes the type of query  issued. Its values are:
+  iia. SIMPLE: if the SELECT does not have any subqueries or JOINS.
+  iib. SUBQUERY: identifies the first SELECT in a subquery.
+  iic. DEPENDENT SUBQUERY: if the SELECT is a subquery that depends on an outer query.
+  iid. PRIMARY: if the SELECT is the outermost query in a JOIN.
+  iie. DERIVED: if the SELECT is part of a subquery inside a FROM clause.
+  iif. UNION RESULT: the SELECT is a result of a UNION.
+iii. table: the table used in the query
+iv. type: indicates what was used in scanning the table. Its values include
+  iva. ALL: the entire table is scanned to get the result.
+  ivb. const: a single constant is used to search and the table has only one matching row.
+  ivc. range: the index used in searching the table is compared to range using clauses like BETWEEN, <, >, <=, >=, etc.
+  ivd. index: the entire index tree is traversed for matching rows.
+v. possible_keys: indicates the keys that can be used to search the table.
+vi. key: indicates the actual keys used in searching the table.
+vii. key_len: indicates the space allocated to the key used by the MySQL optimizer in searching.
+viii. ref: shows the column or constant against which the key is compared during the search.
+ix. rows: shows the number of rows that was traversed during the search. This can inform on wastage of traversal time if a huge number of rows was searched to get just a few rows.
+x. Extra: indicates things like a possible out of bounds condition in the WHERE clause such as 'Impossible WHERE noticed after reading const tables'. It gives details about the query execution.
+
+
+
+2. We use EXPLAIN to optimize slow SQL queries used in our application. Lets say we have a comments table in our application that has a foreign key, user_id, referencing to users table. EXPLAINing the query that finds all the comments made by a user gives us following result.
+mysql> EXPLAIN SELECT * FROM comments WHERE user_id = 41;
++-------------+------+---------------+---------+-------+---------+-------------+
+| select_type | type | key | key_len | ref | rows | Extra |+-------------+------+---------------+---------+-------+---------+-------------+
+|SIMPLE | ALL | NULL | NULL | NULL | 1002345 | Using where|+-------------+------+---------------+---------+-------+---------+-------------+
+mysql> SELECT count(id) FROM comments;+-----------+| count(id) |+-----------+| 1002345 |+-----------+
+
+2.1 The value under 'rows' column in the output of EXPLAIN query and SELECT query after it are same. What does it mean?
+ANSWER: It means the query actually searches ALL the rows to get just comments made by the user whose id is 41. This is not optimal at all.
+
+2.2 Is the SELECT query optimal? If no, how do we optimize it?
+ANSWER: No, the SELECT query is not optimal. To optimise the query, we'll make an index on user_id.
+
+
+
+3. In Rails world, we have someting called polymorphic associations (http://guides.rubyonrails.org/association_basics.html#polymorphic-associations). Lets say in our web application, we can let users comment on photographs and articles. Some of rows in comments table are represented as following:
+mysql> SELECT * FROM comments LIMIT 5;+----+------------------+----------------+---------+
+| id | commentable_type | commentable_id | user_id |+----+------------------+----------------+---------+
+| 1 + Article | 1 | 1 |+----+------------------+----------------+---------+
+| 2 + Photo | 1 | 1 |+----+------------------+----------------+---------+
+| 3 + Photo | 2 | 2 |+----+------------------+----------------+---------+
+| 4 + Photo | 2 | 2 |+----+------------------+------------ ----+---------+
+| 5 + Article | 1 | 2 |+----+------------------+----------------+---------+
+When we need to fetch comments of a user on a particular Article or Photo we form a query like:
+mysql> EXPLAIN SELECT * FROM comments WHERE commentable_id = 1 AND commentable_type = 'Article' AND user_id = 1;
++-------------+------+---------------+---------+-------+---------+-------------+
+| select_type | type | key | key_len | ref | rows | Extra |+-------------+------+---------------+---------+-------+---------+-------------+
+| SIMPLE | ALL | NULL | NULL | NULL | 1000025 | Using where |+-------------+------+---------------+---------+-------+---------+-------------+
+It seems that we do not have any index on any of the columns. And whole comments table is scanned to fetch those comments.
+
+3.1 We decide to index columns in comments table to optimize the SELECT query. What column(s) will you index in which order? Ask the exercise creator for a hint if you are confused
+ANSWER: We'll index the three columns used in the search (commentable_id, commentable_type and user_id) so they are held as a single entity putting an end to redundancy. The query to add the index is:
+ALTER TABLE comments ADD INDEX comment_index(commentable_id, commentable_type, user_id);
+
+
+
+4.
+4.1 EXPLAIN a SELECT query against one of your databases which employs an INNER JOIN between two tables. What does the output look like? What does the values under different columns mean? Do you get only one row in EXPLAIN's output?
+
+ANSWER:
+
+EXPLAIN SELECT comment FROM comments
+INNER JOIN articles
+ON(
+  articles.id = comments.article_id
+)
+WHERE comments.user_id=1;
++----+-------------+----------+--------+--------------------+---------+---------+--------------------------------+------+-------------+
+| id | select_type | table    | type   | possible_keys      | key     | key_len | ref                            | rows | Extra       |
++----+-------------+----------+--------+--------------------+---------+---------+--------------------------------+------+-------------+
+|  1 | SIMPLE      | comments | ref    | user_id,article_id | user_id | 5       | const                          |    4 | Using where |
+|  1 | SIMPLE      | articles | eq_ref | PRIMARY            | PRIMARY | 4       | article_db.comments.article_id |    1 | Using index |
++----+-------------+----------+--------+--------------------+---------+---------+--------------------------------+------+-------------+
+2 rows in set (0.00 sec)
+
+-id indicates that I have no subqueries.
+-select_type shows there's no subqueries nor JOIN clauses.
+-table shows the tables I used in the formulation of the query (comments and articles).
+-type shows that all of the matching rows of my index columns are read for each combination of rows in the resulting table for comments table while all parts of the index I used are used by the JOIN and the index is a PRIMARY KEY, UNIQUE or NOT NULL for articles table. Of course, articles.id is a PRIMARY KEY.
+-possible_keys shows I could use user_id or article_id in comments table and the PRIMARY KEY in articles table as indexes for the search.
+-key indicates that I actually used user_id in comments table and the PRIMARY KEY in articles table as indexes for the search
+-key_len shows that the key chosen by MySQL optimizer in comments has a length of 5 while that in articles has a length of 4.
+-ref shows that comments.user_id was compared against a constant value which of course is 1 and articles.id was compared against comments.article_id.
+-rows shows that the articles table had 1 matching row while comments which is where I'm interested in had 4 matching rows as expected, no unnecessary excesses.
+-Extra shows that I used a WHERE clause in matching rows in comments table. This is true as indicated by the line 'WHERE comments.user_id=1;'. It also shows that I used index in the articles table which is true as articles.id is an index.
+
+I got two(2) rows in EXPLAIN's output since I JOINed with two tables in my query.
+
+4.2 Form the same select query in above question using a subquery instead of a JOIN. What does the EXPLAIN output look like now? Which query is better and why?
+
+ANSWER:
+
+SELECT comment FROM comments 
+WHERE comments.user_id=1 
+AND comments.article_id
+IN(
+  SELECT id FROM articles
+);
++----+--------------------+----------+-----------------+---------------+---------+---------+-------+------+-------------+
+| id | select_type        | table    | type            | possible_keys | key     | key_len | ref   | rows | Extra       |
++----+--------------------+----------+-----------------+---------------+---------+---------+-------+------+-------------+
+|  1 | PRIMARY            | comments | ref             | user_id       | user_id | 5       | const |    4 | Using where |
+|  2 | DEPENDENT SUBQUERY | articles | unique_subquery | PRIMARY       | PRIMARY | 4       | func  |    1 | Using index |
++----+--------------------+----------+-----------------+---------------+---------+---------+-------+------+-------------+
+2 rows in set (0.00 sec)
+
+The output is different
+It shows the following:
+  a. select_type shows that query on articles table depends on the query fetching from comments table
+  b. type shows that query on articles returns only one result and the key used is a PRIMARY KEY
+From my result, they both scanned same number of rows, this might mislead that they're the equally efficient. But select_type column indicates that the JOIN method is better as there's no dependency on the queries, they're both simple queries.
+
+
