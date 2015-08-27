@@ -66,15 +66,14 @@ VALUES
 
 -- Places where Jones can eat (using a nested query)
 SELECT address AS 'Places Using Nested Query'
-FROM (
-  SELECT name, address 
-  FROM sandwiches 
-  INNER JOIN tastes 
-  ON (sandwiches.filling = tastes.filling) 
-  INNER JOIN locations
-  ON (sandwiches.`location` = locations.lname)
+FROM sandwiches
+INNER JOIN locations
+ON (sandwiches.`location` = locations.lname)
+WHERE sandwiches.filling IN(
+  SELECT filling
+  FROM tastes 
   WHERE name = 'Jones'
-) AS modified_table;
+);
 
 -- Places where Jones can eat (without using a nested query)
 SELECT address AS 'Places WITHOUT Using Nested Query'
