@@ -70,9 +70,7 @@ FROM sandwiches
 INNER JOIN locations
 ON (sandwiches.`location` = locations.lname)
 WHERE sandwiches.filling IN(
-  SELECT filling
-  FROM tastes 
-  WHERE name = 'Jones'
+  SELECT filling FROM tastes WHERE name = 'Jones'
 );
 
 -- Places where Jones can eat (without using a nested query)
