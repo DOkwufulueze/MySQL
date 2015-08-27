@@ -72,6 +72,15 @@ ON (sandwiches.`location` = locations.lname)
 WHERE sandwiches.filling IN(
   SELECT filling FROM tastes WHERE name = 'Jones'
 );
+/*
++---------------------------+
+| Places Using Nested Query |
++---------------------------+
+| College St                |
+| Pearse St                 |
++---------------------------+
+2 rows in set (0.12 sec)
+*/
 
 -- Places where Jones can eat (without using a nested query)
 SELECT address AS 'Places WITHOUT Using Nested Query'
@@ -81,6 +90,15 @@ ON (sandwiches.filling = tastes.filling)
 INNER JOIN locations
 ON (sandwiches.`location` = locations.lname)
 WHERE tastes.name = 'Jones';
+/*
++-----------------------------------+
+| Places WITHOUT Using Nested Query |
++-----------------------------------+
+| College St                        |
+| Pearse St                         |
++-----------------------------------+
+2 rows in set (0.00 sec)
+*/
 
 -- for each location the number of people who can eat there
 SELECT address AS Places, COUNT(DISTINCT name) AS 'Number of People' 
@@ -90,4 +108,15 @@ ON (sandwiches.filling = tastes.filling)
 INNER JOIN locations
 ON (sandwiches.`location` = locations.lname)
 GROUP BY address;
+/*
++---------------+------------------+
+| Places        | Number of People |
++---------------+------------------+
+| College St    |                3 |
+| Dame St       |                2 |
+| Lincoln Place |                2 |
+| Pearse St     |                3 |
++---------------+------------------+
+4 rows in set (0.01 sec)
+*/
 
