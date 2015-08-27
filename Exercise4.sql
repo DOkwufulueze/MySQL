@@ -126,6 +126,16 @@ FROM articles
 INNER JOIN users
 ON(articles.user_id = users.id)
 WHERE users.username = @user;
+/*
++----------------------------------+
+| Articles whose author is user3   |
++----------------------------------+
+| Man and Art                      |
+| The Evolution of African Arts    |
+| The use of Natural tools in Arts |
++----------------------------------+
+3 rows in set (0.09 sec)
+*/
 
 -- select articles and comments for the articles selected above
 SELECT article AS Articles, comment AS 'Comments from readers'
@@ -139,6 +149,18 @@ WHERE comments.article_id IN(
     SELECT id FROM users WHERE username = 'user3'
   )
 );
+/*
++----------------------------------+--------------------------------------------------------+
+| Articles                         | Comments from readers                                  |
++----------------------------------+--------------------------------------------------------+
+| Man and Art                      | A brilliant exposure to the world of arts.             |
+| The Evolution of African Arts    | Discusses in clear terms the history of arts.          |
+| The Evolution of African Arts    | A wonderful history article.                           |
+| The use of Natural tools in Arts | Nature is indeed the best example.                     |
+| The use of Natural tools in Arts | It's great to see how positively useful nature can be. |
++----------------------------------+--------------------------------------------------------+
+5 rows in set (0.02 sec)
+*/
 
 -- select articles that don't have any comments
 SELECT article AS 'Articles With No Comments'
@@ -146,6 +168,21 @@ FROM articles
 WHERE articles.id NOT IN(
   SELECT article_id FROM comments
 );
+/*
++---------------------------+
+| Articles With No Comments |
++---------------------------+
+| Introductory Sciences     |
+| Sports in Africa          |
+| European Arts Revisited   |
+| Man and Science           |
+| The Origin of Arts        |
+| Chike and the Chickens    |
+| The Early Hominids        |
+| The Olympics: A History   |
++---------------------------+
+8 rows in set (0.03 sec)
+*/
 
 -- select articles that have maximum number of comments
 SELECT article AS 'Article', MAX(number_of_comments)AS 'Number Of Comments'
@@ -156,6 +193,14 @@ FROM (
   ON(articles.id = comments.article_id)
   GROUP BY article_id
 ) AS count_table;
+/*
++--------------+--------------------+
+| Article      | Number Of Comments |
++--------------+--------------------+
+| Davinci Code |                  3 |
++--------------+--------------------+
+1 row in set (0.00 sec)
+*/
 
 -- select article which does not have more than one comment by the same user
 SELECT DISTINCT article AS 'Articles with not more than one comment by the same user'
@@ -164,4 +209,18 @@ LEFT JOIN articles
 ON(articles.id = comments.article_id)
 GROUP BY comments.article_id, comments.user_id
 HAVING COUNT(comments.user_id) <= 1;
-
+/*
++----------------------------------------------------------+
+| Articles with not more than one comment by the same user |
++----------------------------------------------------------+
+| Davinci Code                                             |
+| Effect of Greenhouse Gases on Embryo Development         |
+| Man and Art                                              |
+| The Evolution of African Arts                            |
+| The use of Natural tools in Arts                         |
+| Tabitha, the Merry Old Lady                              |
+| Innovations in Computing                                 |
+| All Help The Priest                                      |
++----------------------------------------------------------+
+8 rows in set (0.00 sec)
+*/
