@@ -1,0 +1,5 @@
+mysqldump -u root article_db > backup.sql
+
+CREATE DATABASE IF NOT EXISTS restored;
+
+mysql -u root restored < backup.sql
