@@ -114,6 +114,12 @@ The output is different
 It shows the following:
   a. select_type shows that query on articles table depends on the query fetching from comments table
   b. type shows that query on articles returns only one result and the key used is a PRIMARY KEY
-From my result, they both scanned same number of rows, this might mislead that they're the equally efficient. But select_type column indicates that the JOIN method is better as there's no dependency on the queries, they're both simple queries.
+  c. ref indicates that articles table compares the key to a value returned by a function and not some constant value or column.
+
+From my result, they both scanned same number of rows, this might mislead that they're equally efficient. The following comparisons suffice.
+-For the select_type column, it's the case that the subquery method is better as there's a dependency on the queries, meaning one does not even bother executing if the other fails, unlike the JOIN method where the two queries are executed regardless of whether one fails or not.
+-For the ref column, the JOIN method performs better as no stack operation is done since the JOIN method simply compares the key to constant and exact column but the subquery method initiates a stack call operation by referencing a function which has more overhead than simply calling a constant.
+
+So doing a tradeoff, I prefer the subquery to the JOIN method as the overhead of initiating a stack call (as in the subquery method which is efficiently handled by the MySQL engine) is nothing compared to the overhead of running queries (horrible or not), whether or not some other queries fail (as in the JOIN method). It'll be better to run queries if and only if some other queries succeed rather than running both and realizing only later that one or both failed and the expected results didn't come by after such a work on two queries.
 
 
