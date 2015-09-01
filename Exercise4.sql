@@ -30,11 +30,9 @@ CREATE TABLE IF NOT EXISTS articles (
   article VARCHAR(200),
   PRIMARY KEY (id),
   FOREIGN KEY (user_id) REFERENCES users(id)
-    ON DELETE CASCADE
-    ON UPDATE CASCADE,
+    ON DELETE CASCADE,
   FOREIGN KEY (category_id) REFERENCES categories(id)
     ON DELETE CASCADE
-    ON UPDATE CASCADE
 );
 
 CREATE TABLE IF NOT EXISTS comments (
@@ -44,11 +42,9 @@ CREATE TABLE IF NOT EXISTS comments (
   comment TEXT,
   PRIMARY KEY (id),
   FOREIGN KEY (user_id) REFERENCES users(id)
-    ON DELETE CASCADE
-    ON UPDATE CASCADE,
+    ON DELETE CASCADE,
   FOREIGN KEY (article_id) REFERENCES articles(id)
     ON DELETE CASCADE
-    ON UPDATE CASCADE
 );
 
 -- Dumping data into tables
@@ -107,7 +103,9 @@ VALUES
   ('1', '3', 'Great work!!!'),
   ('1', '3', 'On second thought, WONDERFUL WORK!!!'),
   ('4', '5', 'A brilliant exposure to the world of arts.'),
+  ('4', '3', 'Excellent!!!'),
   ('6', '2', 'It keeps you glued till the end of the book.'),
+  ('2', '8', 'A justice to the cause of History.'),
   ('5', '4', 'I hope people learn from this article and get more careful'),
   ('2', '14', 'It\'s great to see that computing techniques will only improve.'),
   ('6', '8', 'Discusses in clear terms the history of arts.'),
@@ -185,14 +183,21 @@ WHERE articles.id NOT IN(
 */
 
 -- select articles that have maximum number of comments
-SELECT article AS 'Article', MAX(number_of_comments)AS 'Number Of Comments'
-FROM (
-  SELECT article, COUNT(article_id) AS number_of_comments
-  FROM articles
-  INNER JOIN comments
-  ON(articles.id = comments.article_id)
-  GROUP BY article_id
-) AS count_table;
+SELECT article, COUNT(article_id) AS number_of_comments FROM articles
+INNER JOIN comments
+ON(articles.id = comments.article_id)
+GROUP BY article_id
+HAVING number_of_comments
+IN(
+  SELECT MAX(number_of_comments) AS 'Number Of Comments'
+  FROM (
+    SELECT article, COUNT(article_id) AS number_of_comments
+    FROM articles
+    INNER JOIN comments
+    ON(articles.id = comments.article_id)
+    GROUP BY article_id
+  ) AS count_table
+);
 /*
 +--------------+--------------------+
 | Article      | Number Of Comments |
