@@ -4,22 +4,22 @@ CREATE DATABASE IF NOT EXISTS article_db;
 
 USE article_db;
 
-CREATE TABLE IF NOT EXISTS user_types (
+CREATE TABLE IF NOT EXISTS roles (
   id INT AUTO_INCREMENT,
-  user_type VARCHAR(10),
+  name VARCHAR(10),
   PRIMARY KEY (id)
 );
 
 CREATE TABLE IF NOT EXISTS users (
   id INT AUTO_INCREMENT,
-  user_type_id INT,
+  role_id INT,
   username VARCHAR(200),
   PRIMARY KEY (id)
 );
 
 CREATE TABLE IF NOT EXISTS categories (
   id INT AUTO_INCREMENT,
-  category VARCHAR(100),
+  name VARCHAR(100),
   PRIMARY KEY (id)
 );
 
@@ -27,7 +27,7 @@ CREATE TABLE IF NOT EXISTS articles (
   id INT AUTO_INCREMENT,
   user_id INT,
   category_id INT,
-  article VARCHAR(200),
+  name VARCHAR(200),
   PRIMARY KEY (id),
   FOREIGN KEY (user_id) REFERENCES users(id)
     ON DELETE CASCADE,
@@ -39,7 +39,7 @@ CREATE TABLE IF NOT EXISTS comments (
   id INT AUTO_INCREMENT,
   user_id INT,
   article_id INT,
-  comment TEXT,
+  `text` TEXT,
   PRIMARY KEY (id),
   FOREIGN KEY (user_id) REFERENCES users(id)
     ON DELETE CASCADE,
@@ -49,14 +49,14 @@ CREATE TABLE IF NOT EXISTS comments (
 
 -- Dumping data into tables
 
--- user_types
-INSERT INTO user_types(user_type)
+-- roles
+INSERT INTO roles(name)
 VALUES
   ('admin'),
   ('normal');
 
 -- users
-INSERT INTO users(user_type_id, username)
+INSERT INTO users(role_id, username)
 VALUES
   ('1', 'User1'),
   ('2', 'User2'),
@@ -66,7 +66,7 @@ VALUES
   ('2', 'User6');
 
 -- categories
-INSERT INTO categories(category)
+INSERT INTO categories(name)
 VALUES
   ('Sciences'),
   ('Arts'),
@@ -74,7 +74,7 @@ VALUES
   ('Sports');
 
 -- articles
-INSERT INTO articles(user_id, category_id, article)
+INSERT INTO articles(user_id, category_id, name)
 VALUES
   ('1', '1', 'Introductory Sciences'),
   ('2', '3', 'Davinci Code'),
@@ -95,7 +95,7 @@ VALUES
   ('6', '3', 'All Help The Priest');
 
 -- comments
-INSERT INTO comments(user_id, article_id, comment)
+INSERT INTO comments(user_id, article_id, `text`)
 VALUES
   ('3', '17', 'Wow! really interesting work of fiction.'),
   ('3', '2', 'Davinci Code: A truly engaging work.'),
@@ -119,7 +119,7 @@ VALUES
 -- select all articles whose author's name is user3 (Do this exercise using variable)
 SET @user = 'user3';
 
-SELECT article AS 'Articles whose author is user3' 
+SELECT name AS 'Articles whose author is user3' 
 FROM articles
 INNER JOIN users
 ON(articles.user_id = users.id)
@@ -136,7 +136,7 @@ WHERE users.username = @user;
 */
 
 -- select articles and comments for the articles selected above
-SELECT article AS Articles, comment AS 'Comments from readers'
+SELECT name AS Articles, `text` AS 'Comments from readers'
 FROM comments
 INNER JOIN articles
 ON(articles.id = comments.article_id)
@@ -161,7 +161,7 @@ WHERE comments.article_id IN(
 */
 
 -- select articles that don't have any comments
-SELECT article AS 'Articles With No Comments'
+SELECT name AS 'Articles With No Comments'
 FROM articles
 WHERE articles.id NOT IN(
   SELECT article_id FROM comments
@@ -183,7 +183,7 @@ WHERE articles.id NOT IN(
 */
 
 -- select articles that have maximum number of comments
-SELECT article, COUNT(article_id) AS number_of_comments FROM articles
+SELECT name, COUNT(article_id) AS number_of_comments FROM articles
 INNER JOIN comments
 ON(articles.id = comments.article_id)
 GROUP BY article_id
@@ -191,7 +191,7 @@ HAVING number_of_comments
 IN(
   SELECT MAX(number_of_comments) AS 'Number Of Comments'
   FROM (
-    SELECT article, COUNT(article_id) AS number_of_comments
+    SELECT name, COUNT(article_id) AS number_of_comments
     FROM articles
     INNER JOIN comments
     ON(articles.id = comments.article_id)
@@ -199,16 +199,18 @@ IN(
   ) AS count_table
 );
 /*
-+--------------+--------------------+
-| Article      | Number Of Comments |
-+--------------+--------------------+
-| Davinci Code |                  3 |
-+--------------+--------------------+
-1 row in set (0.00 sec)
++-------------------------------+--------------------+
+| name                          | number_of_comments |
++-------------------------------+--------------------+
+| Davinci Code                  |                  3 |
+| Sunset Beach                  |                  3 |
+| The Evolution of African Arts |                  3 |
++-------------------------------+--------------------+
+3 rows in set (0.02 sec)
 */
 
 -- select article which does not have more than one comment by the same user
-SELECT DISTINCT article AS 'Articles with not more than one comment by the same user'
+SELECT DISTINCT name AS 'Articles with not more than one comment by the same user'
 FROM comments
 LEFT JOIN articles
 ON(articles.id = comments.article_id)
