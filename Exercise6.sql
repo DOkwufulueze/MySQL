@@ -67,7 +67,7 @@ FROM(
 */
 
 -- What email domains did people respond from ?
-SELECT RIGHT(email, LENGTH(email) - INSTR(email, '@')) AS Domain, COUNT(email) AS 'Number of Responders'
+SELECT SUBSTRING_INDEX(email, '@', -1) AS Domain, COUNT(email) AS 'Number of Responders' 
 FROM email_subscribers
 GROUP BY Domain;
 /*
@@ -85,13 +85,13 @@ GROUP BY Domain;
 -- Which is the most popular email domain among the respondents ?
 SELECT domain AS 'Popular Domain', (domain_count) AS 'Number of Responders'
 FROM(
-  SELECT RIGHT(email, LENGTH(email) - INSTR(email, '@')) AS domain, COUNT(email) AS domain_count
+  SELECT SUBSTRING_INDEX(email, '@', -1) AS domain, COUNT(email) AS domain_count
   FROM email_subscribers
   GROUP BY domain
 ) AS responders_table
 WHERE domain_count IN (
     SELECT MAX(domain_count) FROM (
-    SELECT RIGHT(email, LENGTH(email) - INSTR(email, '@')) AS domain, COUNT(email) AS domain_count
+    SELECT SUBSTRING_INDEX(email, '@', -1) AS domain, COUNT(email) AS domain_count
     FROM email_subscribers
     GROUP BY domain
   ) AS second_responders_table
